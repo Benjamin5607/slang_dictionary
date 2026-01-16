@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Slang Hunter</title>
+    <style>
+        /* 모바일 친화적인 심플 디자인 */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; }
+        
+        /* 검색창 스타일 */
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
+        button { padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
+
+        /* 결과 카드 스타일 */
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .word { font-size: 1.2em; font-weight: bold; color: #0056b3; margin-bottom: 5px; }
+        .definition { color: #333; line-height: 1.5; margin-bottom: 10px; }
+        .example { background-color: #f8f9fa; padding: 10px; border-left: 3px solid #007bff; font-style: italic; color: #555; font-size: 0.9em; }
+        .status { text-align: center; color: #666; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌍 Slang Hunter</h1>
+    
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="슬랭 검색 (예: GOAT)" onkeypress="handleEnter(event)">
+        <button onclick="searchSlang()" id="searchBtn">검색</button>
+    </div>
+
+    <div id="resultArea"></div>
+</div>
+
+<script>
+    async function searchSlang() {
+        const input = document.getElementById('searchInput');
+        const query = input.value.trim();
+        const resultArea = document.getElementById('resultArea');
+        const btn = document.getElementById('searchBtn');
+
+        if (!query) return alert("단어를 입력해주세요!");
+
+        // 초기화 및 로딩 표시
+        resultArea.innerHTML = '<p class="status">채굴 중입니다... ⛏️</p>';
+        btn.disabled = true;
+        btn.innerText = "검색 중...";
+
+        try {
+            // 1. Urban Dictionary API 호출
+            // (CORS 에러 방지를 위해 프록시 api.allorigins.win 사용)
+            const apiUrl = `https://api.urbandictionary.com/v0/define?term=${query}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`;
+            
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            // 프록시가 감싼 내용에서 진짜 JSON 파싱
+            const realData = JSON.parse(data.contents);
+            const list = realData.list;
+
+            // 2. 결과 표시
+            if (!list || list.length === 0) {
+                resultArea.innerHTML = '<p class="status">❌ 검색 결과가 없습니다.</p>';
+            } else {
+                // 상위 5개만 보여주기
+                const html = list.slice(0, 5).map(item => `
+                    <div class="card">
+                        <div class="word">${item.word}</div>
+                        <div class="definition">${item.definition.replace(/\r\n/g, '<br>')}</div>
+                        <div class="example">"${item.example.replace(/\r\n/g, '<br>')}"</div>
+                        <div style="margin-top:8px; font-size:0.8em; color:#888;">👍 ${item.thumbs_up} Likes</div>
+                    </div>
+                `).join('');
+                resultArea.innerHTML = html;
+            }
+
+        } catch (error) {
+            console.error(error);
+            resultArea.innerHTML = `<p class="status">💥 에러 발생: ${error.message}</p>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "검색";
+        }
+    }
+
+    // 엔터키 입력 시 검색
+    function handleEnter(e) {
+        if (e.key === 'Enter') searchSlang();
+    }
+</script>
+
+</body>
+</html>
