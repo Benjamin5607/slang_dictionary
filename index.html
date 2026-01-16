@@ -1,153 +1,118 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Slang AI (Puter Edition)</title>
-    <script src="https://js.puter.com/v2/"></script>
-    
+    <title>AI Slang Curator</title>
     <style>
-        :root { --primary: #7c3aed; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        :root { --primary: #4f46e5; --bg: #f3f4f6; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 20px; margin: 0; }
         .container { max-width: 600px; margin: 0 auto; }
         
-        .header { text-align: center; margin-bottom: 30px; }
-        h1 { margin: 0; font-size: 2rem; color: var(--primary); }
-        .subtitle { font-size: 0.9rem; color: #64748b; }
+        h1 { text-align: center; color: #1f2937; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #6b7280; font-size: 0.9em; margin-bottom: 30px; }
         
-        .box { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; gap: 10px; }
-        select { border: none; background: transparent; font-weight: bold; outline: none; cursor: pointer; }
-        input { flex: 1; border: none; outline: none; font-size: 16px; }
-        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:disabled { opacity: 0.5; cursor: wait; }
+        /* 검색창 디자인 */
+        .search-box { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; gap: 8px; }
+        select { border: none; background: #f3f4f6; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        input { flex: 1; border: none; font-size: 16px; outline: none; }
+        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        button:disabled { background: #cbd5e1; }
 
-        /* 결과 카드 */
-        .ai-card { background: white; border-radius: 16px; padding: 25px; margin-top: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-top: 5px solid var(--primary); display: none; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .word-title { font-size: 2rem; font-weight: 800; }
-        .flag { font-size: 1.5rem; }
-        
-        .section { margin-bottom: 15px; }
-        .label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
-        .text { font-size: 1.05rem; line-height: 1.6; color: #334155; }
-        
-        .example-box { background: #f1f5f9; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); font-style: italic; color: #475569; }
+        /* 로딩 애니메이션 */
+        .loading { text-align: center; margin-top: 50px; display: none; }
+        .brain { font-size: 3rem; display: inline-block; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .loading-text { color: #6b7280; margin-top: 10px; font-size: 0.9em; }
 
-        .loading { text-align: center; margin-top: 40px; display: none; color: #64748b; }
+        /* 결과 카드 (큐레이션) */
+        .ai-card { background: white; border-radius: 20px; padding: 25px; margin-top: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; position: relative; overflow: hidden; }
+        .ai-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, #4f46e5, #ec4899); }
+        
+        .word-title { font-size: 2rem; font-weight: 800; color: #111; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+        .badge { font-size: 0.4em; background: #e0e7ff; color: var(--primary); padding: 4px 8px; border-radius: 6px; vertical-align: middle; }
+        
+        .section-label { font-size: 0.75rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; }
+        .content-text { font-size: 1.1rem; line-height: 1.6; color: #374151; }
+        
+        .example-box { background: #f9fafb; border-left: 4px solid var(--primary); padding: 15px; margin-top: 10px; font-style: italic; color: #4b5563; border-radius: 0 8px 8px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>Global Slang AI</h1>
-        <div class="subtitle">Powered by Puter.js ☁️</div>
-    </div>
+    <h1>Global Slang AI</h1>
+    <div class="subtitle">AI 큐레이터가 정리해주는 전 세계 슬랭</div>
 
-    <div class="box">
+    <div class="search-box">
         <select id="country">
-            <option value="KR">🇰🇷 KR</option>
-            <option value="US">🇺🇸 US</option>
-            <option value="JP">🇯🇵 JP</option>
-            <option value="VN">🇻🇳 VN</option>
-            <option value="FR">🇫🇷 FR</option>
-            <option value="ES">🇪🇸 ES</option>
+            <option value="KR">🇰🇷</option>
+            <option value="US">🇺🇸</option>
+            <option value="JP">🇯🇵</option>
+            <option value="VN">🇻🇳</option>
+            <option value="FR">🇫🇷</option>
         </select>
-        <input type="text" id="term" placeholder="Slang term (e.g. Rizz)" onkeypress="if(event.key==='Enter') askPuter()">
-        <button onclick="askPuter()" id="btn">Ask AI</button>
+        <input type="text" id="term" placeholder="궁금한 슬랭 (예: 폼 미쳤다)" onkeypress="if(event.key==='Enter') askAI()">
+        <button onclick="askAI()" id="btn">분석하기</button>
     </div>
 
     <div id="loader" class="loading">
-        <p>🧠 Puter AI가 생각 중입니다...</p>
+        <div class="brain">🧠</div>
+        <div class="loading-text">AI가 인터넷을 읽고 요약 중입니다...</div>
     </div>
 
     <div id="resultCard" class="ai-card">
-        <div class="card-header">
-            <div class="word-title" id="r_word"></div>
-            <div class="flag" id="r_flag"></div>
-        </div>
-        
-        <div class="section">
-            <div class="label">Definition</div>
-            <div class="text" id="r_def"></div>
+        <div class="word-title">
+            <span id="r_word"></span>
+            <span class="badge">AI CURATED</span>
         </div>
 
-        <div class="section">
-            <div class="label">Origin & Nuance</div>
-            <div class="text" id="r_origin"></div>
-        </div>
+        <div class="section-label">뜻 (Definition)</div>
+        <div class="content-text" id="r_def"></div>
 
-        <div class="section">
-            <div class="label">Example Usage</div>
-            <div class="example-box" id="r_ex"></div>
-        </div>
+        <div class="section-label">유래 및 뉘앙스 (Origin)</div>
+        <div class="content-text" id="r_origin"></div>
+
+        <div class="section-label">사용 예시 (Example)</div>
+        <div class="example-box" id="r_ex"></div>
     </div>
 </div>
 
 <script>
-    async function askPuter() {
+    async function askAI() {
         const term = document.getElementById('term').value;
         const country = document.getElementById('country').value;
-        const btn = document.getElementById('btn');
-        const loader = document.getElementById('loader');
-        const card = document.getElementById('resultCard');
+        
+        if(!term) return alert("단어를 입력해주세요!");
 
-        if (!term) return alert("단어를 입력해주세요!");
-
-        // 1. UI 상태 변경 (로딩 중)
-        card.style.display = 'none';
-        loader.style.display = 'block';
-        btn.disabled = true;
-        btn.innerText = "Thinking...";
-
-        // 2. AI에게 보낼 프롬프트 작성 (AI Curator 역할 부여)
-        // Puter.js는 기본적으로 웹 브라우저 언어 설정을 따르거나 영어로 답하므로,
-        // 명시적으로 "한국어로 설명해줘"라고 지시해야 합니다.
-        const prompt = `
-            You are a global slang expert. 
-            Explain the slang term "${term}" used in "${country}".
-            
-            Output must be a strictly valid JSON object (no markdown, no backticks) with these fields:
-            {
-                "definition": "Meaning in Korean (한국어로 뜻 설명)",
-                "origin": "Brief origin/etymology in Korean (유래 및 뉘앙스)",
-                "example": "A realistic conversation example in original language"
-            }
-            
-            If you don't know the slang, return {"definition": "모르는 단어입니다.", "origin": "정보 없음", "example": "-"}
-        `;
+        // UI 상태 변경
+        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('btn').disabled = true;
 
         try {
-            // 3. Puter.js AI 호출 (서버 없이 바로 호출!)
-            const response = await puter.ai.chat(prompt);
-            
-            // 응답 텍스트(JSON) 파싱
-            // 가끔 AI가 Markdown 기호(```json ... ```)를 붙여서 줄 때가 있어서 제거함
-            let cleanJson = response.message.content.replace(/```json|```/g, "").trim();
-            const data = JSON.parse(cleanJson);
+            // 파이썬 서버(/curate) 호출
+            const res = await fetch(`/curate?term=${encodeURIComponent(term)}&country=${country}`);
+            const json = await res.json();
 
-            // 4. 결과 표시
-            document.getElementById('r_word').innerText = term;
-            document.getElementById('r_flag').innerText = getFlag(country);
-            document.getElementById('r_def').innerText = data.definition;
-            document.getElementById('r_origin').innerText = data.origin;
-            document.getElementById('r_ex').innerText = data.example;
-
-            card.style.display = 'block';
-
-        } catch (error) {
-            console.error(error);
-            alert("AI 연결 중 오류가 발생했습니다. (Puter 로그인 필요)");
+            if (json.status === 'ok') {
+                const data = json.data;
+                document.getElementById('r_word').innerText = term;
+                document.getElementById('r_def').innerText = data.definition;
+                document.getElementById('r_origin').innerText = data.origin;
+                document.getElementById('r_ex').innerText = `"${data.example}"`;
+                
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('resultCard').style.display = 'block';
+            } else {
+                throw new Error("분석 실패");
+            }
+        } catch (e) {
+            alert("AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            document.getElementById('loader').style.display = 'none';
         } finally {
-            loader.style.display = 'none';
-            btn.disabled = false;
-            btn.innerText = "Ask AI";
+            document.getElementById('btn').disabled = false;
         }
-    }
-
-    function getFlag(code) {
-        const flags = {'KR':'🇰🇷', 'US':'🇺🇸', 'JP':'🇯🇵', 'VN':'🇻🇳', 'FR':'🇫🇷', 'ES':'🇪🇸'};
-        return flags[code] || '🌍';
     }
 </script>
 
