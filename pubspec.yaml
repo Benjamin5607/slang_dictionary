@@ -1,0 +1,13 @@
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # 1. 통신용 (플루토의 발)
+  http: ^1.2.0  # 또는 dio (더 강력한 기능을 원하면)
+  
+  # 2. 환경변수 관리 (API 키 숨기기 필수!)
+  flutter_dotenv: ^5.1.0 
+  
+  # 3. 상태 관리 (데이터 흐름 제어)
+  # Riverpod이나 Provider 중 편한 걸로 가시죠. 일단 기본 Provider로 가정합니다.
+  provider: ^6.1.1
