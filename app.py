@@ -1,5 +1,5 @@
 import os
-import random # 랜덤 뽑기용
+import random
 from flask import Flask, request, jsonify, send_file
 import requests
 from bs4 import BeautifulSoup
@@ -8,90 +8,111 @@ import urllib.parse
 app = Flask(__name__)
 
 # ---------------------------------------------------------
-# 🎭 인간 코스프레용 가면 (User-Agent 리스트)
+# 🎭 인간 코스프레 헤더 (User-Agent)
 # ---------------------------------------------------------
-USER_AGENTS = [
-    # Chrome (Windows)
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    # Edge (Windows)
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
-    # Whale (Naver Browser) - 네이버 뚫을 때 효과적
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Whale/3.23.214.17 Safari/537.36",
-    # Safari (Mac)
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_2_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
-]
-
-def get_headers(referer_url):
-    """
-    진짜 사람처럼 보이는 헤더를 생성하는 함수
-    """
+def get_random_header():
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+    ]
     return {
-        'User-Agent': random.choice(USER_AGENTS), # 가면 랜덤 착용
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7', # 한국인인 척
-        'Referer': referer_url, # "나 네이버 메인에서 검색해서 들어온거야"라고 뻥치기
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1'
+        'User-Agent': random.choice(user_agents),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': 'https://www.google.com/'
     }
 
 @app.route('/')
 def home():
     try:
         return send_file('index.html')
-    except Exception as e:
-        return str(e)
+    except:
+        return "index.html 파일을 찾을 수 없습니다."
 
 # ---------------------------------------------------------
-# ⛏️ 만능 채굴기 (DuckDuckGo)
+# ⛏️ 핵심 엔진: DuckDuckGo Lite 파서
 # ---------------------------------------------------------
-def scrape_ddg(term, country_code):
-    # 국가별 코드 매핑
-    regions = {'KR': 'kr-kr', 'JP': 'jp-jp', 'CN': 'cn-zh', 'VN': 'vn-vi', 
-               'FR': 'fr-fr', 'DE': 'de-de', 'ES': 'es-es', 'RU': 'ru-ru', 
-               'BR': 'br-pt', 'MX': 'mx-es'}
-    region = regions.get(country_code, 'wt-wt')
+def scrape_duckduckgo(term, country_code):
+    """
+    네이버/구글 대신 차단이 덜한 'DuckDuckGo Lite' 버전을 긁습니다.
+    """
+    base_url = "https://lite.duckduckgo.com/lite/"
+    
+    # 1. 검색어 전략 (Search Strategy)
+    # 한국이면 '나무위키' 내용을 우선적으로 찾도록 유도
+    if country_code == 'KR':
+        # "중꺾마 site:namu.wiki" 형태로 검색 -> 나무위키 내용만 쏙 뽑아옴
+        query = f'site:namu.wiki "{term}"'
+    elif country_code == 'JP':
+        query = f'{term} とは スラング'
+    else:
+        query = f'{term} slang meaning'
 
-    suffix = "meaning"
-    if country_code == 'KR': suffix = "뜻 의미"
-    if country_code == 'JP': suffix = "とは 意味"
+    payload = {
+        'q': query,
+        'kl': 'wt-wt' # 지역 제한 해제 (더 많은 결과)
+    }
     
-    url = "https://lite.duckduckgo.com/lite/"
-    payload = {'q': f"{term} {suffix}", 'kl': region}
-    
-    # 여기서도 사람인 척!
-    headers = get_headers('https://duckduckgo.com/')
-    
-    results = []
+    print(f"🕵️ Searching DDG: {query}") # 로그 확인용
+
     try:
-        res = requests.post(url, data=payload, headers=headers, timeout=5)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        rows = soup.select('table:nth-of-type(3) tr')
+        # 타임아웃 10초로 넉넉하게
+        res = requests.post(base_url, data=payload, headers=get_random_header(), timeout=10)
         
-        current_title = ""
+        # HTML 파싱
+        soup = BeautifulSoup(res.text, 'html.parser')
+        
+        # DuckDuckGo Lite의 결과는 테이블 구조로 되어 있음
+        # table 3번째꺼의 tr들을 가져와야 함
+        results = []
+        tables = soup.find_all('table')
+        
+        if len(tables) < 3:
+            print("❌ DDG 구조 변경됨 or 차단됨")
+            return []
+
+        rows = tables[2].find_all('tr')
+        
+        current_title = None
+        current_link = None
+
         for row in rows:
+            # 1. 제목 줄 (Title)
             link_tag = row.select_one('.result-link')
             if link_tag:
                 current_title = link_tag.get_text(strip=True)
                 current_link = link_tag['href']
-                continue
+                continue # 다음 줄로 (다음 줄이 요약문임)
             
+            # 2. 요약 줄 (Snippet)
             snippet_tag = row.select_one('.result-snippet')
             if snippet_tag and current_title:
+                clean_snippet = snippet_tag.get_text(strip=True)
+                
+                # 나무위키 결과라면 제목에서 ' - 나무위키' 같은거 떼기
+                clean_title = current_title.replace(" - 나무위키", "").replace(" - NamuWiki", "")
+
                 results.append({
-                    'word': current_title,
-                    'definition': snippet_tag.get_text(strip=True),
+                    'word': clean_title,
+                    'definition': clean_snippet,
                     'example': current_link,
-                    'thumbs_up': 'Web Search'
+                    'thumbs_up': 'NamuWiki' if country_code == 'KR' else 'Web Search'
                 })
-                current_title = ""
-                if len(results) >= 4: break
+                
+                # 초기화
+                current_title = None
+                
+                if len(results) >= 5: break
+
+        return results
+
     except Exception as e:
-        print(f"DDG Error: {e}")
-        
-    return results
+        print(f"❌ DDG Error: {e}")
+        return []
 
 # ---------------------------------------------------------
-# 🚀 메인 라우터
+# 🚀 API 라우트
 # ---------------------------------------------------------
 @app.route('/scrape')
 def scrape():
@@ -100,90 +121,26 @@ def scrape():
     
     if not term: return jsonify({'error': 'No term'})
 
-    print(f"🕵️ Human-like Request: {country} - {term}")
+    print(f"🚀 Request: {country} - {term}")
     data_list = []
 
-    try:
-        # 1. 🇰🇷 한국 (네이버 오픈사전)
-        if country == 'KR':
-            try:
-                # 네이버는 Referer(이전 주소)를 체크하므로 꼭 넣어줘야 함
-                base_url = "https://dict.naver.com/"
-                search_url = f"https://dict.naver.com/search.dict?dicQuery={urllib.parse.quote(term)}&query={urllib.parse.quote(term)}&target=dict&ie=utf8&query_utf=&isOnlyViewEE="
-                
-                # ★ 핵심: 네이버 전용 가면 착용
-                headers = get_headers(base_url)
-                
-                res = requests.get(search_url, headers=headers, timeout=3)
-                soup = BeautifulSoup(res.text, 'html.parser')
-                
-                # 선택자 수정 (네이버가 HTML을 자주 바꿔서 넓게 잡음)
-                items = soup.select('.search_list li')
-                
-                for item in items[:4]:
-                    dt = item.select_one('dt')
-                    dd = item.select_one('dd')
-                    
-                    if dt and dd:
-                        word_text = dt.get_text(strip=True)
-                        # 검색어랑 비슷한 것만 가져오기
-                        if term in word_text or word_text in term:
-                            link_tag = dt.select_one('a')
-                            link = "https://dict.naver.com/" + link_tag['href'] if link_tag else "#"
-                            
-                            data_list.append({
-                                'word': word_text,
-                                'definition': dd.get_text(strip=True),
-                                'example': link,
-                                'thumbs_up': 'Naver Dict'
-                            })
-            except Exception as e:
-                print(f"Naver Fail: {e}")
-            
-            # 실패하면 덕덕고 투입
-            if not data_list: data_list = scrape_ddg(term, 'KR')
+    # 1. 영미권 (API 사용 - 가장 빠름)
+    if country in ['US', 'GB', 'AU', 'CA']:
+        try:
+            res = requests.get(f"https://api.urbandictionary.com/v0/define?term={term}", timeout=5)
+            data_list = res.json().get('list', [])
+        except:
+            pass # 실패하면 아래 DDG로 넘어감
 
-        # 2. 🇯🇵 일본 (Weblio)
-        elif country == 'JP':
-            try:
-                url = f"https://www.weblio.jp/content/{urllib.parse.quote(term)}"
-                headers = get_headers('https://www.google.co.jp/')
-                
-                res = requests.get(url, headers=headers, timeout=3)
-                soup = BeautifulSoup(res.text, 'html.parser')
-                
-                title = soup.select_one('.midashigo')
-                desc = soup.select_one('.kiji')
-                
-                if title and desc:
-                    data_list.append({
-                        'word': title.get_text(strip=True),
-                        'definition': desc.get_text(strip=True)[:150] + "...",
-                        'example': url,
-                        'thumbs_up': 'Weblio'
-                    })
-            except Exception as e:
-                print(f"Weblio Fail: {e}")
+    # 2. 그 외 모든 국가 (한국 포함) -> DuckDuckGo로 통합 처리
+    if not data_list:
+        data_list = scrape_duckduckgo(term, country)
 
-            if not data_list: data_list = scrape_ddg(term, 'JP')
-
-        # 3. 🇺🇸 영미권 (Urban Dictionary API)
-        elif country in ['US', 'GB', 'AU', 'CA']:
-            try:
-                # API 호출할 때도 헤더 넣으면 더 안전함
-                headers = get_headers('https://www.urbandictionary.com/')
-                res = requests.get(f"https://api.urbandictionary.com/v0/define?term={term}", headers=headers, timeout=5)
-                data_list = res.json().get('list', [])
-            except:
-                pass
-
-        # 4. 그 외 국가
-        else:
-            data_list = scrape_ddg(term, country)
-
-    except Exception as e:
-        return jsonify({'error': str(e)})
-
+    # 3. 그래도 없으면? 
+    # 프론트엔드에게 "결과 없음"을 명확히 전달
+    if not data_list:
+        print("😥 모든 방법 실패. 결과 0개.")
+    
     return jsonify({'mode': 'SCRAPE', 'list': data_list})
 
 if __name__ == '__main__':
