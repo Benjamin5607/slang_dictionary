@@ -1,98 +1,190 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Slang Curator</title>
+    <title>Global Slang AI</title>
     <style>
-        :root { --primary: #4f46e5; --bg: #f3f4f6; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 20px; margin: 0; }
+        :root { --primary: #6366f1; --bg: #f3f4f6; --text: #1f2937; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 600px; margin: 0 auto; }
+
+        /* 상단 언어 설정 바 */
+        .top-bar { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+        .lang-select { padding: 8px 12px; border-radius: 20px; border: 1px solid #cbd5e1; background: white; font-size: 0.85rem; cursor: pointer; }
+
+        h1 { text-align: center; margin: 0; font-size: 2rem; color: #111; }
+        .subtitle { text-align: center; color: #6b7280; margin-bottom: 30px; font-size: 0.9em; }
+
+        /* 컨트롤 패널 */
+        .control-panel { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         
-        h1 { text-align: center; color: #1f2937; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #6b7280; font-size: 0.9em; margin-bottom: 30px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8rem; font-weight: 700; color: #6b7280; margin-bottom: 5px; text-transform: uppercase; }
         
-        /* 검색창 디자인 */
-        .search-box { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; gap: 8px; }
-        select { border: none; background: #f3f4f6; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        input { flex: 1; border: none; font-size: 16px; outline: none; }
-        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        button:disabled { background: #cbd5e1; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 16px; box-sizing: border-box; background: #fff; }
+        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+        
+        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
         /* 로딩 애니메이션 */
-        .loading { text-align: center; margin-top: 50px; display: none; }
-        .brain { font-size: 3rem; display: inline-block; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-        .loading-text { color: #6b7280; margin-top: 10px; font-size: 0.9em; }
+        .loading { text-align: center; margin-top: 40px; display: none; }
+        .spinner { font-size: 2.5rem; animation: spin 1s infinite linear; display: inline-block; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* 결과 카드 (큐레이션) */
-        .ai-card { background: white; border-radius: 20px; padding: 25px; margin-top: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); display: none; position: relative; overflow: hidden; }
-        .ai-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, #4f46e5, #ec4899); }
+        /* AI 결과 카드 */
+        .ai-card { background: white; border-radius: 20px; padding: 25px; margin-top: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-top: 5px solid var(--primary); display: none; }
         
-        .word-title { font-size: 2rem; font-weight: 800; color: #111; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
-        .badge { font-size: 0.4em; background: #e0e7ff; color: var(--primary); padding: 4px 8px; border-radius: 6px; vertical-align: middle; }
-        
-        .section-label { font-size: 0.75rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .word-title { font-size: 1.8rem; font-weight: 800; color: #111; }
+        .badge { background: #e0e7ff; color: var(--primary); padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; }
+
+        .section-title { font-size: 0.75rem; font-weight: 800; color: #9ca3af; text-transform: uppercase; margin-top: 20px; margin-bottom: 8px; letter-spacing: 0.05em; }
         .content-text { font-size: 1.1rem; line-height: 1.6; color: #374151; }
-        
-        .example-box { background: #f9fafb; border-left: 4px solid var(--primary); padding: 15px; margin-top: 10px; font-style: italic; color: #4b5563; border-radius: 0 8px 8px 0; }
+        .example-box { background: #f9fafb; border-left: 4px solid var(--primary); padding: 15px; border-radius: 0 8px 8px 0; font-style: italic; color: #4b5563; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Global Slang AI</h1>
-    <div class="subtitle">AI 큐레이터가 정리해주는 전 세계 슬랭</div>
-
-    <div class="search-box">
-        <select id="country">
-            <option value="KR">🇰🇷</option>
-            <option value="US">🇺🇸</option>
-            <option value="JP">🇯🇵</option>
-            <option value="VN">🇻🇳</option>
-            <option value="FR">🇫🇷</option>
+    <div class="top-bar">
+        <select id="uiLang" class="lang-select" onchange="changeUILanguage()">
+            <option value="EN">🌐 English</option>
+            <option value="KR">🇰🇷 한국어</option>
+            <option value="JP">🇯🇵 日本語</option>
+            <option value="ES">🇪🇸 Español</option>
         </select>
-        <input type="text" id="term" placeholder="궁금한 슬랭 (예: 폼 미쳤다)" onkeypress="if(event.key==='Enter') askAI()">
-        <button onclick="askAI()" id="btn">분석하기</button>
+    </div>
+
+    <h1 id="appTitle">Global Slang AI</h1>
+    <div class="subtitle" id="appSubtitle">Powered by Groq Intelligence</div>
+
+    <div class="control-panel">
+        <div class="input-group">
+            <label id="lblTargetCountry">Target Country</label>
+            <select id="countrySelect">
+                </select>
+        </div>
+
+        <div class="input-group">
+            <label id="lblSearch">Slang Term</label>
+            <input type="text" id="searchInput" placeholder="e.g. Rizz" onkeypress="if(event.key==='Enter') askAI()">
+        </div>
+
+        <button onclick="askAI()" id="searchBtn">Analyze</button>
     </div>
 
     <div id="loader" class="loading">
-        <div class="brain">🧠</div>
-        <div class="loading-text">AI가 인터넷을 읽고 요약 중입니다...</div>
+        <div class="spinner">🧠</div>
+        <p id="loadingText">AI is thinking...</p>
     </div>
 
     <div id="resultCard" class="ai-card">
-        <div class="word-title">
-            <span id="r_word"></span>
+        <div class="card-header">
+            <span class="word-title" id="r_word"></span>
             <span class="badge">AI CURATED</span>
         </div>
 
-        <div class="section-label">뜻 (Definition)</div>
+        <div class="section-title" id="lblDef">Definition</div>
         <div class="content-text" id="r_def"></div>
 
-        <div class="section-label">유래 및 뉘앙스 (Origin)</div>
+        <div class="section-title" id="lblOrigin">Origin & Nuance</div>
         <div class="content-text" id="r_origin"></div>
 
-        <div class="section-label">사용 예시 (Example)</div>
+        <div class="section-title" id="lblEx">Example</div>
         <div class="example-box" id="r_ex"></div>
     </div>
 </div>
 
 <script>
-    async function askAI() {
-        const term = document.getElementById('term').value;
-        const country = document.getElementById('country').value;
+    // --- 1. 데이터 설정 (번역 + 국가) ---
+    const i18n = {
+        EN: { title: "Global Slang AI", subtitle: "Powered by Groq Intelligence", lblCountry: "Target Country", lblSearch: "Slang Term", btnSearch: "Analyze", loading: "AI is thinking... 🧠", lblDef: "Definition", lblOrigin: "Origin & Nuance", lblEx: "Example" },
+        KR: { title: "글로벌 슬랭 AI", subtitle: "Groq 인공지능 기반 분석", lblCountry: "검색할 국가", lblSearch: "슬랭 단어", btnSearch: "분석하기", loading: "AI가 분석 중입니다... 🧠", lblDef: "뜻 (의미)", lblOrigin: "유래 및 뉘앙스", lblEx: "사용 예시" },
+        JP: { title: "グローバル・スラングAI", subtitle: "Groq AIによる分析", lblCountry: "対象国", lblSearch: "スラング単語", btnSearch: "分析する", loading: "AIが考え中... 🧠", lblDef: "意味", lblOrigin: "由来・ニュアンス", lblEx: "使用例" },
+        ES: { title: "Argot Global AI", subtitle: "Impulsado por Groq", lblCountry: "País de destino", lblSearch: "Término", btnSearch: "Analizar", loading: "IA pensando... 🧠", lblDef: "Definición", lblOrigin: "Origen y Matiz", lblEx: "Ejemplo" }
+    };
+
+    const countryData = {
+        "Asia": [
+            { code: "KR", name: "🇰🇷 South Korea" }, { code: "JP", name: "🇯🇵 Japan" },
+            { code: "CN", name: "🇨🇳 China" }, { code: "VN", name: "🇻🇳 Vietnam" },
+            { code: "TH", name: "🇹🇭 Thailand" }, { code: "ID", name: "🇮🇩 Indonesia" },
+            { code: "IN", name: "🇮🇳 India" }
+        ],
+        "North America": [
+            { code: "US", name: "🇺🇸 United States" }, { code: "CA", name: "🇨- Canada" },
+            { code: "MX", name: "🇲🇽 Mexico" }
+        ],
+        "Europe": [
+            { code: "GB", name: "🇬🇧 United Kingdom" }, { code: "FR", name: "🇫🇷 France" },
+            { code: "DE", name: "🇩🇪 Germany" }, { code: "ES", name: "🇪🇸 Spain" },
+            { code: "IT", name: "🇮🇹 Italy" }, { code: "RU", name: "🇷🇺 Russia" }
+        ],
+        "South America": [
+            { code: "BR", name: "🇧🇷 Brazil" }, { code: "AR", name: "🇦🇷 Argentina" }
+        ],
+        "Others": [
+            { code: "AU", name: "🇦🇺 Australia" }, { code: "ZA", name: "🇿🇦 South Africa" }
+        ]
+    };
+
+    // --- 2. 초기화 ---
+    window.onload = function() {
+        // 국가 리스트 채우기
+        const select = document.getElementById('countrySelect');
+        let html = '';
+        for (const [region, countries] of Object.entries(countryData)) {
+            html += `<optgroup label="${region}">`;
+            countries.forEach(c => html += `<option value="${c.code}">${c.name}</option>`);
+            html += `</optgroup>`;
+        }
+        select.innerHTML = html;
         
-        if(!term) return alert("단어를 입력해주세요!");
+        // 언어 설정 적용
+        changeUILanguage();
+    };
+
+    // --- 3. 언어 변경 로직 ---
+    function changeUILanguage() {
+        const lang = document.getElementById('uiLang').value;
+        const text = i18n[lang];
+
+        document.getElementById('appTitle').innerText = text.title;
+        document.getElementById('appSubtitle').innerText = text.subtitle;
+        document.getElementById('lblTargetCountry').innerText = text.lblCountry;
+        document.getElementById('lblSearch').innerText = text.lblSearch;
+        document.getElementById('searchBtn').innerText = text.btnSearch;
+        document.getElementById('loadingText').innerText = text.loading;
+        
+        // 결과 카드 라벨 변경
+        document.getElementById('lblDef').innerText = text.lblDef;
+        document.getElementById('lblOrigin').innerText = text.lblOrigin;
+        document.getElementById('lblEx').innerText = text.lblEx;
+    }
+
+    // --- 4. AI 호출 로직 ---
+    async function askAI() {
+        const term = document.getElementById('searchInput').value;
+        const country = document.getElementById('countrySelect').value;
+        const btn = document.getElementById('searchBtn');
+        const loader = document.getElementById('loader');
+        const card = document.getElementById('resultCard');
+
+        if (!term) return alert("Please enter a term!");
 
         // UI 상태 변경
-        document.getElementById('resultCard').style.display = 'none';
-        document.getElementById('loader').style.display = 'block';
-        document.getElementById('btn').disabled = true;
+        card.style.display = 'none';
+        loader.style.display = 'block';
+        btn.disabled = true;
 
         try {
-            // 파이썬 서버(/curate) 호출
+            // 서버 호출 (404 에러나면 서버 재시작 필수!)
             const res = await fetch(`/curate?term=${encodeURIComponent(term)}&country=${country}`);
+            
+            if (!res.ok) throw new Error("Server Error (404 or 500)");
+            
             const json = await res.json();
 
             if (json.status === 'ok') {
@@ -102,16 +194,18 @@
                 document.getElementById('r_origin').innerText = data.origin;
                 document.getElementById('r_ex').innerText = `"${data.example}"`;
                 
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('resultCard').style.display = 'block';
+                loader.style.display = 'none';
+                card.style.display = 'block';
             } else {
-                throw new Error("분석 실패");
+                throw new Error(json.msg || "Analysis failed");
             }
+
         } catch (e) {
-            alert("AI 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
-            document.getElementById('loader').style.display = 'none';
+            console.error(e);
+            alert("Error: 서버가 켜져 있는지 확인해주세요! (Codespaces 터미널에서 'python app.py' 재시작)");
+            loader.style.display = 'none';
         } finally {
-            document.getElementById('btn').disabled = false;
+            btn.disabled = false;
         }
     }
 </script>
