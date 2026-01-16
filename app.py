@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 # 🔑 여기에 Groq API Key를 붙여넣으세요! (따옴표 안에)
-GROQ_API_KEY = "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"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # Groq 클라이언트 준비
 client = Groq(api_key=GROQ_API_KEY)
