@@ -1,0 +1,17 @@
+name: Render Wake Up ⏰
+
+# 언제 실행할 것인가?
+on:
+  schedule:
+    # 14분마다 실행 (Render는 15분 지나면 자니까 1분 전에 깨우기)
+    - cron: '*/14 * * * *'
+  # (옵션) 깃허브에서 버튼 눌러서 수동으로 실행 가능하게 함
+  workflow_dispatch:
+
+jobs:
+  poke_server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poke Render App 👉
+        # curl 명령어로 서버 주소에 접속 요청을 보냄
+        run: curl https://slang-dictionary-p04y.onrender.com/
