@@ -5,29 +5,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Slang Hunter</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        /* 모바일 최적화 스타일 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f0f2f5; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+        }
         .container { max-width: 600px; margin: 0 auto; }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
         
-        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
-        button { padding: 12px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        h1 { 
+            text-align: center; 
+            color: #333; 
+            margin-bottom: 25px; 
+            font-size: 1.8rem;
+        }
+        
+        /* 검색창 영역 */
+        .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
+        
+        input { 
+            flex: 1; 
+            padding: 14px; 
+            border: 1px solid #ddd; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            outline: none; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        input:focus { border-color: #007bff; }
+        
+        button { 
+            padding: 14px 24px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            font-size: 16px;
+            cursor: pointer; 
+            transition: background 0.2s;
+        }
+        button:active { background-color: #0056b3; }
         button:disabled { background-color: #ccc; }
 
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        .word { font-size: 1.2em; font-weight: bold; color: #0056b3; margin-bottom: 5px; }
-        .definition { color: #333; line-height: 1.5; margin-bottom: 10px; word-wrap: break-word; }
-        .example { background-color: #f8f9fa; padding: 10px; border-left: 3px solid #007bff; font-style: italic; color: #555; font-size: 0.9em; word-wrap: break-word; }
-        .status { text-align: center; color: #666; margin-top: 20px; }
+        /* 결과 카드 디자인 */
+        .card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            margin-bottom: 16px; 
+            border: 1px solid #f0f0f0;
+        }
+        .word { 
+            font-size: 1.4em; 
+            font-weight: 800; 
+            color: #2c3e50; 
+            margin-bottom: 8px; 
+        }
+        .definition { 
+            font-size: 1rem;
+            color: #444; 
+            line-height: 1.6; 
+            margin-bottom: 12px; 
+            word-wrap: break-word; 
+        }
+        .example { 
+            background-color: #f8f9fa; 
+            padding: 12px; 
+            border-left: 4px solid #007bff; 
+            font-style: italic; 
+            color: #555; 
+            font-size: 0.95em; 
+            border-radius: 4px;
+            word-wrap: break-word; 
+        }
+        .likes {
+            margin-top: 12px; 
+            font-size: 0.85em; 
+            color: #888; 
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .status { text-align: center; color: #666; margin-top: 30px; font-size: 1.1em;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🌍 Slang Hunter</h1>
+    <h1>🌍 Global Slang Hunter</h1>
     
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="슬랭 검색 (예: GOAT)" onkeypress="handleEnter(event)">
+        <input type="text" id="searchInput" placeholder="슬랭 검색 (예: Rizz, GOAT)" onkeypress="handleEnter(event)">
         <button onclick="searchSlang()" id="searchBtn">검색</button>
     </div>
 
@@ -43,37 +116,35 @@
 
         if (!query) return alert("단어를 입력해주세요!");
 
-        // UI 초기화
+        // UI 초기화 (로딩 중)
         resultArea.innerHTML = '<p class="status">채굴 중입니다... ⛏️</p>';
         btn.disabled = true;
-        btn.innerText = "검색 중...";
+        btn.innerText = "...";
 
         try {
-            // [수정된 부분] 더 안정적인 corsproxy.io 사용
-            // 이 프록시는 JSON을 감싸지 않고 원본 그대로 줍니다.
-            const targetUrl = `https://api.urbandictionary.com/v0/define?term=${query}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            // ★ 핵심: 내 파이썬 서버에게 요청 (차단 회피!)
+            const targetUrl = `/search?term=${encodeURIComponent(query)}`;
             
-            const response = await fetch(proxyUrl);
+            const response = await fetch(targetUrl);
             
             if (!response.ok) {
                 throw new Error(`서버 응답 오류 (${response.status})`);
             }
 
             const data = await response.json();
-            const list = data.list; // 여기서는 바로 .list에 접근 가능
+            const list = data.list;
 
-            // 결과 표시
+            // 결과 표시 로직
             if (!list || list.length === 0) {
-                resultArea.innerHTML = '<p class="status">❌ 검색 결과가 없습니다.</p>';
+                resultArea.innerHTML = '<p class="status">❌ 검색 결과가 없습니다.<br><small>철자를 확인하거나, 없는 단어일 수 있습니다.</small></p>';
             } else {
-                // 상위 5개만 렌더링
-                const html = list.slice(0, 5).map(item => `
+                // 상위 10개만 렌더링
+                const html = list.slice(0, 10).map(item => `
                     <div class="card">
                         <div class="word">${escapeHtml(item.word)}</div>
                         <div class="definition">${formatText(item.definition)}</div>
                         <div class="example">"${formatText(item.example)}"</div>
-                        <div style="margin-top:8px; font-size:0.8em; color:#888;">👍 ${item.thumbs_up} Likes</div>
+                        <div class="likes">👍 ${item.thumbs_up}명이 좋아함</div>
                     </div>
                 `).join('');
                 resultArea.innerHTML = html;
@@ -81,7 +152,7 @@
 
         } catch (error) {
             console.error(error);
-            resultArea.innerHTML = `<p class="status">💥 에러 발생!<br><small>${error.message}</small><br><br>잠시 후 다시 시도해보세요.</p>`;
+            resultArea.innerHTML = `<p class="status">💥 에러 발생!<br><small>${error.message}</small><br><br>터미널에서 <b>python3 server.py</b>가 실행 중인지 확인하세요.</p>`;
         } finally {
             btn.disabled = false;
             btn.innerText = "검색";
@@ -93,16 +164,14 @@
         if (e.key === 'Enter') searchSlang();
     }
 
-    // [보너스] 텍스트 내의 대괄호 [] 없애기 및 줄바꿈 처리
+    // 텍스트 포맷팅 (대괄호 제거 + 줄바꿈)
     function formatText(text) {
         if (!text) return '';
-        // Urban Dictionary 특유의 [Link] 대괄호 제거
-        let cleanText = text.replace(/\[|\]/g, "");
-        // 줄바꿈 처리
-        return escapeHtml(cleanText).replace(/\r\n|\n/g, '<br>');
+        let cleanText = text.replace(/\[|\]/g, ""); // 대괄호 제거
+        return escapeHtml(cleanText).replace(/\r\n|\n/g, '<br>'); // 줄바꿈
     }
 
-    // 보안을 위한 HTML 특수문자 변환 (XSS 방지)
+    // 보안 (XSS 방지)
     function escapeHtml(text) {
         if (!text) return '';
         return text
