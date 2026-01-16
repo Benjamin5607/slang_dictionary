@@ -5,110 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Slang Hunter</title>
     <style>
-        /* 모바일 최적화 스타일 */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: #f0f2f5; 
-            margin: 0; 
-            padding: 20px; 
-            color: #333;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; }
-        
-        h1 { 
-            text-align: center; 
-            color: #333; 
-            margin-bottom: 25px; 
-            font-size: 1.8rem;
-        }
-        
-        /* 검색창 영역 */
+        h1 { text-align: center; margin-bottom: 25px; }
         .search-box { display: flex; gap: 10px; margin-bottom: 25px; }
-        
-        input { 
-            flex: 1; 
-            padding: 14px; 
-            border: 1px solid #ddd; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            outline: none; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        input:focus { border-color: #007bff; }
-        
-        button { 
-            padding: 14px 24px; 
-            background-color: #007bff; 
-            color: white; 
-            border: none; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            font-size: 16px;
-            cursor: pointer; 
-            transition: background 0.2s;
-        }
-        button:active { background-color: #0056b3; }
-        button:disabled { background-color: #ccc; }
-
-        /* 결과 카드 디자인 */
-        .card { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
-            margin-bottom: 16px; 
-            border: 1px solid #f0f0f0;
-        }
-        .word { 
-            font-size: 1.4em; 
-            font-weight: 800; 
-            color: #2c3e50; 
-            margin-bottom: 8px; 
-        }
-        .definition { 
-            font-size: 1rem;
-            color: #444; 
-            line-height: 1.6; 
-            margin-bottom: 12px; 
-            word-wrap: break-word; 
-        }
-        .example { 
-            background-color: #f8f9fa; 
-            padding: 12px; 
-            border-left: 4px solid #007bff; 
-            font-style: italic; 
-            color: #555; 
-            font-size: 0.95em; 
-            border-radius: 4px;
-            word-wrap: break-word; 
-        }
-        .likes {
-            margin-top: 12px; 
-            font-size: 0.85em; 
-            color: #888; 
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-        }
-        
-        .status { text-align: center; color: #666; margin-top: 30px; font-size: 1.1em;}
+        input { flex: 1; padding: 14px; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; outline: none; }
+        button { padding: 14px 24px; background-color: #2da44e; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        button:disabled { background-color: #94d3a2; }
+        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 16px; border: 1px solid #e1e4e8; }
+        .word { font-size: 1.4em; font-weight: 800; color: #0366d6; margin-bottom: 8px; }
+        .definition { margin-bottom: 12px; line-height: 1.6; }
+        .example { background-color: #f6f8fa; padding: 12px; border-left: 4px solid #0366d6; font-style: italic; color: #555; }
+        .status { text-align: center; color: #666; margin-top: 30px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🌍 Global Slang Hunter</h1>
+    <h1>🌍 깃허브 슬랭 헌터</h1>
     
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="슬랭 검색 (예: Rizz, GOAT)" onkeypress="handleEnter(event)">
-        <button onclick="searchSlang()" id="searchBtn">검색</button>
+        <input type="text" id="searchInput" placeholder="슬랭 검색 (예: Flex, Stan)" onkeypress="handleEnter(event)">
+        <button onclick="startSearch()" id="searchBtn">검색</button>
     </div>
 
     <div id="resultArea"></div>
 </div>
 
 <script>
-    async function searchSlang() {
+    // 3개의 우회로(프록시) 준비
+    const PROXIES = [
+        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`, 
+        (url) => `https://thingproxy.freeboard.io/fetch/${url}`
+    ];
+
+    async function startSearch() {
         const input = document.getElementById('searchInput');
         const query = input.value.trim();
         const resultArea = document.getElementById('resultArea');
@@ -116,71 +48,62 @@
 
         if (!query) return alert("단어를 입력해주세요!");
 
-        // UI 초기화 (로딩 중)
-        resultArea.innerHTML = '<p class="status">채굴 중입니다... ⛏️</p>';
+        resultArea.innerHTML = '<p class="status">채굴 중... ⛏️</p>';
         btn.disabled = true;
-        btn.innerText = "...";
 
-        try {
-            // ★ 핵심: 내 파이썬 서버에게 요청 (차단 회피!)
-            const targetUrl = `/search?term=${encodeURIComponent(query)}`;
-            
-            const response = await fetch(targetUrl);
-            
-            if (!response.ok) {
-                throw new Error(`서버 응답 오류 (${response.status})`);
+        const targetUrl = `https://api.urbandictionary.com/v0/define?term=${query}`;
+        let success = false;
+
+        // 좀비 전략: 1번이 실패하면 2번, 2번 실패하면 3번 시도
+        for (let i = 0; i < PROXIES.length; i++) {
+            try {
+                console.log(`시도 중: 우회로 ${i + 1}`);
+                const proxyUrl = PROXIES[i](targetUrl);
+                
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("응답 실패");
+                
+                const data = await response.json();
+                
+                // 데이터 표시 (성공 시 루프 탈출)
+                displayResults(data.list);
+                success = true;
+                break; 
+
+            } catch (e) {
+                console.warn(`우회로 ${i + 1} 막힘:`, e);
+                // 다음 우회로로 계속 진행
             }
-
-            const data = await response.json();
-            const list = data.list;
-
-            // 결과 표시 로직
-            if (!list || list.length === 0) {
-                resultArea.innerHTML = '<p class="status">❌ 검색 결과가 없습니다.<br><small>철자를 확인하거나, 없는 단어일 수 있습니다.</small></p>';
-            } else {
-                // 상위 10개만 렌더링
-                const html = list.slice(0, 10).map(item => `
-                    <div class="card">
-                        <div class="word">${escapeHtml(item.word)}</div>
-                        <div class="definition">${formatText(item.definition)}</div>
-                        <div class="example">"${formatText(item.example)}"</div>
-                        <div class="likes">👍 ${item.thumbs_up}명이 좋아함</div>
-                    </div>
-                `).join('');
-                resultArea.innerHTML = html;
-            }
-
-        } catch (error) {
-            console.error(error);
-            resultArea.innerHTML = `<p class="status">💥 에러 발생!<br><small>${error.message}</small><br><br>터미널에서 <b>python3 server.py</b>가 실행 중인지 확인하세요.</p>`;
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "검색";
         }
+
+        if (!success) {
+            resultArea.innerHTML = '<p class="status">❌ 모든 우회로가 막혔습니다.<br>잠시 후 다시 시도해주세요.</p>';
+        }
+
+        btn.disabled = false;
     }
 
-    // 엔터키 처리
-    function handleEnter(e) {
-        if (e.key === 'Enter') searchSlang();
+    function displayResults(list) {
+        const resultArea = document.getElementById('resultArea');
+        if (!list || list.length === 0) {
+            resultArea.innerHTML = '<p class="status">결과가 없습니다.</p>';
+            return;
+        }
+
+        const html = list.slice(0, 10).map(item => `
+            <div class="card">
+                <div class="word">${escapeHtml(item.word)}</div>
+                <div class="definition">${formatText(item.definition)}</div>
+                <div class="example">"${formatText(item.example)}"</div>
+                <div style="margin-top:10px; font-size:0.8em; color:#888;">👍 ${item.thumbs_up}</div>
+            </div>
+        `).join('');
+        resultArea.innerHTML = html;
     }
 
-    // 텍스트 포맷팅 (대괄호 제거 + 줄바꿈)
-    function formatText(text) {
-        if (!text) return '';
-        let cleanText = text.replace(/\[|\]/g, ""); // 대괄호 제거
-        return escapeHtml(cleanText).replace(/\r\n|\n/g, '<br>'); // 줄바꿈
-    }
-
-    // 보안 (XSS 방지)
-    function escapeHtml(text) {
-        if (!text) return '';
-        return text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+    function handleEnter(e) { if (e.key === 'Enter') startSearch(); }
+    function formatText(t) { return escapeHtml(t.replace(/\[|\]/g, "")).replace(/\r\n|\n/g, '<br>'); }
+    function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ""; }
 </script>
 
 </body>
