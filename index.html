@@ -3,396 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Slang Dictionary</title>
+    <title>Global Slang Scraper</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --text-light: #64748b;
-        }
-
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: var(--bg); 
-            margin: 0; 
-            padding: 20px; 
-            color: var(--text); 
-        }
-
-        .container { max-width: 650px; margin: 0 auto; }
+        /* 깔끔한 스타일 */
+        :root { --primary: #6366f1; --bg: #f3f4f6; }
+        body { font-family: sans-serif; background: var(--bg); padding: 20px; margin: 0; }
+        .container { max-width: 600px; margin: 0 auto; }
         
-        /* 헤더 영역 */
-        header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-        }
-        h1 { margin: 0 0 10px 0; font-size: 2rem; }
-        .subtitle { color: var(--text-light); font-size: 0.9rem; }
-
-        /* 설정 영역 (언어 선택) */
-        .settings-bar {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 15px;
-        }
-        .lang-select {
-            padding: 8px 12px;
-            border-radius: 20px;
-            border: 1px solid #cbd5e1;
-            background: white;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        /* 메인 컨트롤 패널 */
-        .control-panel {
-            background: white;
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text-light); }
+        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h1 { text-align: center; color: #333; }
         
-        select, input { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            box-sizing: border-box; /* 패딩 포함 크기 계산 */
-            background-color: #fff;
-        }
+        /* 컨트롤 */
+        select, input, button { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; }
         
-        /* 국가 선택 드롭다운 스타일 */
-        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
-
-        button { 
-            width: 100%;
-            padding: 14px; 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            font-size: 16px; 
-            cursor: pointer; 
-            transition: opacity 0.2s;
-        }
-        button:active { opacity: 0.8; }
-        button:disabled { background-color: #cbd5e1; cursor: not-allowed; }
-
         /* 결과 카드 */
-        .card { 
-            background: var(--card-bg); 
-            padding: 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-            margin-bottom: 16px; 
-            border-left: 5px solid var(--primary);
-        }
-        .word-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .word { font-size: 1.5em; font-weight: 800; color: #1e293b; }
-        .likes { font-size: 0.85em; color: var(--text-light); background: #f1f5f9; padding: 4px 8px; border-radius: 12px; }
-        
-        .definition { margin-bottom: 12px; line-height: 1.6; color: #334155; }
-        .example { background-color: #f8fafc; padding: 12px; border-radius: 8px; font-style: italic; color: #475569; font-size: 0.95em; }
-        
-        .status { text-align: center; color: var(--text-light); margin-top: 40px; }
-        
-        /* 뱃지 */
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px; }
-        .badge-us { background: #dbeafe; color: #1e40af; }
-        .badge-kr { background: #fee2e2; color: #991b1b; }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .word { font-size: 1.2em; font-weight: bold; color: #333; display: flex; justify-content: space-between;}
+        .source { font-size: 0.8em; color: white; background: #888; padding: 2px 6px; border-radius: 4px; }
+        .def { margin: 10px 0; line-height: 1.5; color: #555; }
+        .link { font-size: 0.9em; color: var(--primary); text-decoration: none; display: block; margin-top: 5px;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="settings-bar">
-        <select id="uiLang" class="lang-select" onchange="changeUILanguage()">
-            <option value="EN">🌐 English (Interface)</option>
-            <option value="KR">🇰🇷 한국어 (인터페이스)</option>
-            <option value="JP">🇯🇵 日本語 (インターフェース)</option>
-            <option value="ES">🇪🇸 Español (Interfaz)</option>
+    <div class="box">
+        <h1>🌍 Global Slang Scraper</h1>
+        
+        <select id="countrySelect">
+            <option value="US">🇺🇸 English (Urban Dictionary)</option>
+            <option value="KR">🇰🇷 Korean (Naver OpenDict)</option>
+            <option value="JP">🇯🇵 Japanese (Weblio)</option>
         </select>
-    </div>
 
-    <header>
-        <h1 id="appTitle">Global Slang Dictionary</h1>
-        <div class="subtitle" id="appSubtitle">Discover street language from around the world</div>
-    </header>
-    
-    <div class="control-panel">
-        <div class="input-group">
-            <label id="lblTargetCountry">Target Country</label>
-            <select id="countrySelect">
-                </select>
-        </div>
-
-        <div class="input-group">
-            <label id="lblSearch">Slang Term</label>
-            <input type="text" id="searchInput" placeholder="e.g. Rizz, Flex..." onkeypress="handleEnter(event)">
-        </div>
-
-        <button onclick="startSearch()" id="searchBtn">Search</button>
+        <input type="text" id="searchInput" placeholder="Search slang..." onkeypress="if(event.key==='Enter') doSearch()">
+        <button onclick="doSearch()" id="btn">SEARCH</button>
     </div>
 
     <div id="resultArea"></div>
 </div>
 
 <script>
-    /* =========================================
-       1. 데이터 & 설정 (Data & Config)
-       ========================================= */
-    
-    // UI 번역 데이터
-    const i18n = {
-        EN: {
-            title: "Global Slang Dictionary",
-            subtitle: "Discover street language from around the world",
-            lblCountry: "Target Country / Region",
-            lblSearch: "Slang Term",
-            btnSearch: "Search",
-            placeholder: "e.g. Rizz, Flex...",
-            mining: "Mining data... ⛏️",
-            noResult: "No results found.",
-            error: "Connection failed.",
-            proxyFail: "All proxies failed."
-        },
-        KR: {
-            title: "글로벌 슬랭 사전",
-            subtitle: "전 세계의 길거리 언어를 탐험하세요",
-            lblCountry: "검색할 국가 / 지역",
-            lblSearch: "슬랭 단어",
-            btnSearch: "검색하기",
-            placeholder: "예: 폼 미쳤다, 중꺾마...",
-            mining: "데이터 채굴 중입니다... ⛏️",
-            noResult: "결과를 찾을 수 없습니다.",
-            error: "오류가 발생했습니다.",
-            proxyFail: "모든 우회 경로가 막혔습니다."
-        },
-        JP: {
-            title: "グローバル・スラング辞典",
-            subtitle: "世界中の若者言葉を検索",
-            lblCountry: "対象国 / 地域",
-            lblSearch: "スラング単語",
-            btnSearch: "検索",
-            placeholder: "例：推し, 草...",
-            mining: "データ収集中... ⛏️",
-            noResult: "結果が見つかりませんでした。",
-            error: "エラーが発生しました。",
-            proxyFail: "プロキシ接続に失敗しました。"
-        },
-        ES: {
-            title: "Diccionario Global de Argot",
-            subtitle: "Descubre el lenguaje callejero del mundo",
-            lblCountry: "País / Región de destino",
-            lblSearch: "Término de argot",
-            btnSearch: "Buscar",
-            placeholder: "ej. Cheveré, Guey...",
-            mining: "Extrayendo datos... ⛏️",
-            noResult: "No se encontraron resultados.",
-            error: "Ocurrió un error.",
-            proxyFail: "Fallaron todos los proxies."
-        }
-    };
-
-    // 국가 목록 데이터
-    const countryData = {
-        "Global / English Sphere": [
-            { code: "US", name: "🇺🇸 United States" },
-            { code: "GB", name: "🇬🇧 United Kingdom" },
-            { code: "CA", name: "🇨- Canada" },
-            { code: "AU", name: "🇦🇺 Australia" },
-            { code: "NZ", name: "🇳🇿 New Zealand" }
-        ],
-        "Asia": [
-            { code: "KR", name: "🇰🇷 South Korea" },
-            { code: "JP", name: "🇯🇵 Japan" },
-            { code: "CN", name: "🇨🇳 China" },
-            { code: "VN", name: "🇻🇳 Vietnam" },
-            { code: "TH", name: "🇹🇭 Thailand" },
-            { code: "PH", name: "🇵🇭 Philippines" },
-            { code: "ID", name: "🇮🇩 Indonesia" },
-            { code: "MY", name: "🇲🇾 Malaysia" },
-            { code: "SG", name: "🇸🇬 Singapore" },
-            { code: "IN", name: "🇮🇳 India" }
-        ],
-        "Europe": [
-            { code: "FR", name: "🇫🇷 France" },
-            { code: "DE", name: "🇩🇪 Germany" },
-            { code: "ES", name: "🇪🇸 Spain" },
-            { code: "IT", name: "🇮🇹 Italy" },
-            { code: "RU", name: "🇷🇺 Russia" },
-            { code: "PT", name: "🇵🇹 Portugal" },
-            { code: "IE", name: "🇮🇪 Ireland" }
-        ],
-        "Americas": [
-            { code: "BR", name: "🇧🇷 Brazil" },
-            { code: "MX", name: "🇲🇽 Mexico" },
-            { code: "AR", name: "🇦🇷 Argentina" },
-            { code: "CO", name: "🇨🇴 Colombia" }
-        ],
-        "Others": [
-            { code: "ZA", name: "🇿🇦 South Africa" },
-            { code: "NG", name: "🇳🇬 Nigeria" },
-            { code: "EG", name: "🇪🇬 Egypt" },
-            { code: "SA", name: "🇸🇦 Saudi Arabia" }
-        ]
-    };
-
-    /* =========================================
-       2. 초기화 및 UI 로직
-       ========================================= */
-    
-    window.onload = function() {
-        populateCountries();
-        changeUILanguage(); // 초기 언어 설정 적용
-    };
-
-    // 국가 드롭다운 채우기
-    function populateCountries() {
-        const select = document.getElementById('countrySelect');
-        let html = '';
-        
-        for (const [region, countries] of Object.entries(countryData)) {
-            html += `<optgroup label="${region}">`;
-            countries.forEach(c => {
-                html += `<option value="${c.code}">${c.name}</option>`;
-            });
-            html += `</optgroup>`;
-        }
-        select.innerHTML = html;
-    }
-
-    // UI 언어 변경
-    function changeUILanguage() {
-        const lang = document.getElementById('uiLang').value;
-        const text = i18n[lang];
-
-        document.getElementById('appTitle').innerText = text.title;
-        document.getElementById('appSubtitle').innerText = text.subtitle;
-        document.getElementById('lblTargetCountry').innerText = text.lblCountry;
-        document.getElementById('lblSearch').innerText = text.lblSearch;
-        document.getElementById('searchBtn').innerText = text.btnSearch;
-        document.getElementById('searchInput').placeholder = text.placeholder;
-    }
-
-    // 현재 UI 언어의 텍스트 가져오기 (헬퍼)
-    function getUiText(key) {
-        const lang = document.getElementById('uiLang').value;
-        return i18n[lang][key] || i18n['EN'][key];
-    }
-
-    /* =========================================
-       3. 검색 엔진 (The Engine)
-       ========================================= */
-
-    // 프록시 목록 (좀비 전략)
-    const PROXIES = [
-        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`, 
-        (url) => `https://thingproxy.freeboard.io/fetch/${url}`
-    ];
-
-    async function startSearch() {
-        const input = document.getElementById('searchInput');
+    async function doSearch() {
+        const term = document.getElementById('searchInput').value;
         const country = document.getElementById('countrySelect').value;
-        const query = input.value.trim();
         const resultArea = document.getElementById('resultArea');
-        const btn = document.getElementById('searchBtn');
+        const btn = document.getElementById('btn');
 
-        if (!query) return alert("Please enter a word!");
+        if(!term) return alert("단어를 입력하세요!");
 
-        // 상태 업데이트
-        resultArea.innerHTML = `<p class="status">${getUiText('mining')}</p>`;
+        resultArea.innerHTML = '<p style="text-align:center">⛏️ Scraping data...</p>';
         btn.disabled = true;
 
-        /* [전략]
-           현재 우리는 Urban Dictionary API(영어권)만 가지고 있습니다.
-           비영어권(한국, 일본 등)은 API가 없으므로, 
-           1. 영미권이면 -> Urban Dictionary API 호출
-           2. 비영어권이면 -> Urban Dictionary에서 검색하되, 결과가 없으면 구글 검색 링크 제공 (임시)
-        */
-       
-        // 일단 모든 국가에 대해 Urban Dictionary를 찔러봅니다. (글로벌 단어도 많으니까요)
-        const targetUrl = `https://api.urbandictionary.com/v0/define?term=${query}`;
-        let success = false;
+        try {
+            let dataList = [];
 
-        for (let i = 0; i < PROXIES.length; i++) {
-            try {
-                const proxyUrl = PROXIES[i](targetUrl);
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error("Network response was not ok");
-                
-                const data = await response.json();
-                displayResults(data.list, country, query);
-                success = true;
-                break; 
-            } catch (e) {
-                console.warn(`Proxy ${i+1} failed`, e);
+            // 1. 영미권은 기존 API 사용 (빠르니까)
+            if (country === 'US') {
+                const res = await fetch(`https://api.urbandictionary.com/v0/define?term=${term}`);
+                const json = await res.json();
+                dataList = json.list;
+            } 
+            // 2. 한국/일본은 내 파이썬 서버에게 크롤링 요청!
+            else {
+                // 내 서버의 /scrape 주소 호출
+                const res = await fetch(`/scrape?term=${encodeURIComponent(term)}&country=${country}`);
+                const json = await res.json();
+                dataList = json.list;
             }
-        }
 
-        if (!success) {
-            resultArea.innerHTML = `<p class="status">❌ ${getUiText('proxyFail')}</p>`;
-        }
+            render(dataList, country);
 
-        btn.disabled = false;
+        } catch (e) {
+            resultArea.innerHTML = `<p style="text-align:center; color:red">Error: ${e.message}</p>`;
+        } finally {
+            btn.disabled = false;
+        }
     }
 
-    function displayResults(list, countryCode, query) {
-        const resultArea = document.getElementById('resultArea');
-        const uiLang = document.getElementById('uiLang').value;
-        
-        // 결과가 없을 때 처리
+    function render(list, country) {
+        const area = document.getElementById('resultArea');
         if (!list || list.length === 0) {
-            // 비영어권 국가인데 결과가 없으면 구글 검색 버튼이라도 보여줌
-            if (countryCode !== 'US' && countryCode !== 'GB') {
-                resultArea.innerHTML = `
-                    <div class="card" style="text-align:center; border-left-color: #f59e0b;">
-                        <div class="word">🕵️ Data Not Found</div>
-                        <div class="definition">
-                            API에서 결과를 찾지 못했습니다.<br>
-                            직접 현지 웹사이트를 검색해보시겠습니까?
-                        </div>
-                        <a href="https://www.google.com/search?q=${countryCode}+slang+${query}+meaning" target="_blank" 
-                           style="display:inline-block; margin-top:15px; text-decoration:none; color:white; background:#f59e0b; padding:10px 20px; border-radius:8px; font-weight:bold;">
-                           Google Search (${countryCode})
-                        </a>
-                    </div>
-                `;
-            } else {
-                resultArea.innerHTML = `<p class="status">${getUiText('noResult')}</p>`;
-            }
+            area.innerHTML = '<p style="text-align:center">No results found.</p>';
             return;
         }
 
-        // 결과 렌더링
-        const html = list.slice(0, 5).map(item => `
+        area.innerHTML = list.slice(0, 5).map(item => `
             <div class="card">
-                <div class="word-header">
-                    <span class="word">${escapeHtml(item.word)}</span>
-                    <span class="likes">👍 ${item.thumbs_up}</span>
+                <div class="word">
+                    ${item.word}
+                    <span class="source">${item.thumbs_up || country}</span>
                 </div>
-                <div class="badge badge-us">Source: Urban Dictionary</div>
-                
-                <div class="definition">${formatText(item.definition)}</div>
-                <div class="example">"${formatText(item.example)}"</div>
+                <div class="def">${(item.definition || "").replace(/\r\n/g, '<br>')}</div>
+                ${item.example && item.example.startsWith('http') 
+                    ? `<a href="${item.example}" target="_blank" class="link">🔗 Link to source</a>`
+                    : `<div style="background:#eee; padding:8px; border-radius:4px; font-style:italic; font-size:0.9em;">"${item.example}"</div>`
+                }
             </div>
         `).join('');
-        
-        resultArea.innerHTML = html;
     }
-
-    function handleEnter(e) { if (e.key === 'Enter') startSearch(); }
-    function formatText(t) { return escapeHtml(t.replace(/\[|\]/g, "")).replace(/\r\n|\n/g, '<br>'); }
-    function escapeHtml(t) { return t ? t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ""; }
 </script>
 
 </body>
