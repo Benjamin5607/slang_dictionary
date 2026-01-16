@@ -1,3 +1,4 @@
+import os  # <--- [추가] 운영체제 기능 사용
 from flask import Flask, request, jsonify, send_file
 import requests
 from bs4 import BeautifulSoup
@@ -91,4 +92,6 @@ def scrape():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    # [수정] 클라우드가 정해준 포트(PORT)를 쓰거나, 없으면 8080을 씀
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
